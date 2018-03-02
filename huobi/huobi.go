@@ -2,12 +2,21 @@ package huobi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
+type Account struct {
+	ID     int64
+	Type   string
+	State  string
+	UserID int64
+}
+
 type Huobi struct {
-	AccessKey string
-	SecretKey string
+	accessKey    string
+	secretKey    string
+	tradeAccount Account
 }
 
 func (h *Huobi) GetExchangeName() string {
@@ -20,7 +29,7 @@ func (h *Huobi) GetAccounts() AccountsReturn {
 	accountsReturn := AccountsReturn{}
 
 	strRequest := "/v1/account/accounts"
-	jsonAccountsReturn := apiKeyGet(make(map[string]string), strRequest, h.AccessKey, h.SecretKey)
+	jsonAccountsReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonAccountsReturn), &accountsReturn)
 
 	return accountsReturn
@@ -33,7 +42,7 @@ func (h *Huobi) GetAccountBalance(strAccountID string) BalanceReturn {
 	balanceReturn := BalanceReturn{}
 
 	strRequest := fmt.Sprintf("/v1/account/accounts/%s/balance", strAccountID)
-	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, h.AccessKey, h.SecretKey)
+	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
 
 	return balanceReturn
@@ -58,7 +67,7 @@ func (h *Huobi) Place(placeRequestParams PlaceRequestParams) PlaceReturn {
 	mapParams["type"] = placeRequestParams.Type
 
 	strRequest := "/v1/order/orders/place"
-	jsonPlaceReturn := apiKeyPost(mapParams, strRequest, h.AccessKey, h.SecretKey)
+	jsonPlaceReturn := apiKeyPost(mapParams, strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
 
 	return placeReturn
@@ -71,7 +80,7 @@ func (h *Huobi) SubmitCancel(strOrderID string) PlaceReturn {
 	placeReturn := PlaceReturn{}
 
 	strRequest := fmt.Sprintf("/v1/order/orders/%s/submitcancel", strOrderID)
-	jsonPlaceReturn := apiKeyPost(make(map[string]string), strRequest, h.AccessKey, h.SecretKey)
+	jsonPlaceReturn := apiKeyPost(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
 
 	return placeReturn
@@ -84,15 +93,37 @@ func (h *Huobi) GetOrderInfo(strOrderID string) OrderReturn {
 	orderReturn := OrderReturn{}
 
 	strRequest := fmt.Sprintf("/v1/order/orders/%s", strOrderID)
-	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, h.AccessKey, h.SecretKey)
+	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonPlaceReturn), &orderReturn)
 
 	return orderReturn
 }
 
-func NewHuobi(accessKey, secretKey string) *Huobi {
-	return &Huobi{
-		AccessKey: accessKey,
-		SecretKey: secretKey,
+func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
+	h := &Huobi{
+		accessKey: accesskey,
+		secretKey: secretkey,
 	}
+
+	fmt.Println("init huobi.")
+	ret := h.GetAccounts()
+	if ret.Status != "ok" {
+		return nil, errors.New(ret.ErrMsg)
+	}
+
+	for _, account := range ret.Data {
+		if account.Type == "spot" {
+			fmt.Println("account id:", account.ID)
+			h.tradeAccount.ID = account.ID
+			h.tradeAccount.Type = account.Type
+			h.tradeAccount.State = account.State
+			h.tradeAccount.UserID = account.UserID
+			break
+		}
+
+	}
+
+	fmt.Println("init huobi success.")
+
+	return h, nil
 }
