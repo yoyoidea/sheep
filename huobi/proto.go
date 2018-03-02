@@ -56,6 +56,7 @@ type Order struct {
 	ID          int64  `json:"id"`
 	Symbol      string `json:"symbol"`
 	State       string `json:"state"`
+	Amount      string `json:"amount"`
 	FieldAmount string `json:"field-amount"`
 	Price       string `json:"price"`
 	Type        string `json:"type"`
