@@ -40,8 +40,7 @@ func (h *Huobi) GetAccounts() AccountsReturn {
 // return: BalanceReturn对象
 func (h *Huobi) GetAccountBalance() (*Balance, error) {
 	balanceReturn := BalanceReturn{}
-
-	strRequest := fmt.Sprintf("/v1/account/accounts/%s/balance", h.tradeAccount.ID)
+	strRequest := fmt.Sprintf("/v1/account/accounts/%d/balance", h.tradeAccount.ID)
 	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
 	if balanceReturn.Status != "ok" {

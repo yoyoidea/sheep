@@ -61,7 +61,6 @@ type Order struct {
 	Price       string `json:"price"`
 	Type        string `json:"type"`
 }
-
 type OrderReturn struct {
 	Status  string `json:"status"`
 	Data    Order  `json:"data"`
