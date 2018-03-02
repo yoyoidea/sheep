@@ -51,7 +51,7 @@ func (h *Huobi) GetAccountBalance(strAccountID string) BalanceReturn {
 // 下单
 // placeRequestParams: 下单信息
 // return: PlaceReturn对象
-func (h *Huobi) Place(placeRequestParams PlaceRequestParams) PlaceReturn {
+func (h *Huobi) Place(placeRequestParams PlaceRequestParams) (string, error) {
 	placeReturn := PlaceReturn{}
 
 	mapParams := make(map[string]string)
@@ -70,33 +70,47 @@ func (h *Huobi) Place(placeRequestParams PlaceRequestParams) PlaceReturn {
 	jsonPlaceReturn := apiKeyPost(mapParams, strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
 
-	return placeReturn
+	if placeReturn.Status != "ok" {
+		return "", errors.New(placeReturn.ErrMsg)
+	}
+
+	return placeReturn.Data, nil
+
 }
 
 // 申请撤销一个订单请求
 // strOrderID: 订单ID
 // return: PlaceReturn对象
-func (h *Huobi) SubmitCancel(strOrderID string) PlaceReturn {
+func (h *Huobi) SubmitCancel(strOrderID string) error {
 	placeReturn := PlaceReturn{}
 
 	strRequest := fmt.Sprintf("/v1/order/orders/%s/submitcancel", strOrderID)
 	jsonPlaceReturn := apiKeyPost(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonPlaceReturn), &placeReturn)
 
-	return placeReturn
+	if placeReturn.Status != "ok" {
+		return errors.New(placeReturn.ErrMsg)
+	}
+
+	return nil
 }
 
 // 查询订单详情
 // strOrderID: 订单ID
 // return: OrderReturn对象
-func (h *Huobi) GetOrderInfo(strOrderID string) OrderReturn {
+func (h *Huobi) GetOrderInfo(strOrderID string) (*Order, error) {
 	orderReturn := OrderReturn{}
 
 	strRequest := fmt.Sprintf("/v1/order/orders/%s", strOrderID)
 	jsonPlaceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonPlaceReturn), &orderReturn)
 
-	return orderReturn
+	if orderReturn.Status != "ok" {
+		return nil, errors.New(orderReturn.ErrMsg)
+	}
+
+	return &orderReturn.Data, nil
+
 }
 
 func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
