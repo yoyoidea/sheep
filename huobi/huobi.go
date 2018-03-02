@@ -38,14 +38,17 @@ func (h *Huobi) GetAccounts() AccountsReturn {
 // 根据账户ID查询账户余额
 // nAccountID: 账户ID, 不知道的话可以通过GetAccounts()获取, 可以只现货账户, C2C账户, 期货账户
 // return: BalanceReturn对象
-func (h *Huobi) GetAccountBalance(strAccountID string) BalanceReturn {
+func (h *Huobi) GetAccountBalance(strAccountID string) (*Balance, error) {
 	balanceReturn := BalanceReturn{}
 
 	strRequest := fmt.Sprintf("/v1/account/accounts/%s/balance", strAccountID)
 	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
+	if balanceReturn.Status != "ok" {
+		return nil, errors.New(balanceReturn.ErrMsg)
+	}
 
-	return balanceReturn
+	return &balanceReturn.Data, nil
 }
 
 // 下单
@@ -110,6 +113,25 @@ func (h *Huobi) GetOrderInfo(strOrderID string) (*Order, error) {
 	}
 
 	return &orderReturn.Data, nil
+
+}
+
+func (h *Huobi) GetOrders(params OrdersRequestParams) ([]Order, error) {
+	ordersReturn := OrdersReturn{}
+
+	jsonP, _ := json.Marshal(params)
+
+	var paramMap = make(map[string]string)
+	json.Unmarshal(jsonP, &paramMap)
+
+	strRequest := "/v1/order/orders"
+	ret := apiKeyGet(paramMap, strRequest, h.accessKey, h.secretKey)
+	json.Unmarshal([]byte(ret), &ordersReturn)
+	if ordersReturn.Status != "ok" {
+		return nil, errors.New(ordersReturn.ErrMsg)
+	}
+
+	return ordersReturn.Data, nil
 
 }
 
