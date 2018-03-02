@@ -37,12 +37,11 @@ func (h *Huobi) GetAccounts() AccountsReturn {
 }
 
 // 根据账户ID查询账户余额
-// nAccountID: 账户ID, 不知道的话可以通过GetAccounts()获取, 可以只现货账户, C2C账户, 期货账户
 // return: BalanceReturn对象
-func (h *Huobi) GetAccountBalance(strAccountID string) (*Balance, error) {
+func (h *Huobi) GetAccountBalance() (*Balance, error) {
 	balanceReturn := BalanceReturn{}
 
-	strRequest := fmt.Sprintf("/v1/account/accounts/%s/balance", strAccountID)
+	strRequest := fmt.Sprintf("/v1/account/accounts/%s/balance", h.tradeAccount.ID)
 	jsonBanlanceReturn := apiKeyGet(make(map[string]string), strRequest, h.accessKey, h.secretKey)
 	json.Unmarshal([]byte(jsonBanlanceReturn), &balanceReturn)
 	if balanceReturn.Status != "ok" {
@@ -56,6 +55,7 @@ func (h *Huobi) GetAccountBalance(strAccountID string) (*Balance, error) {
 // placeRequestParams: 下单信息
 // return: PlaceReturn对象
 func (h *Huobi) Place(amount, price float64, symbol, typ string) (string, error) {
+	placeReturn := PlaceReturn{}
 	var placeRequestParams PlaceRequestParams
 	placeRequestParams.AccountID = strconv.FormatInt(h.tradeAccount.ID, 10)
 	placeRequestParams.Amount = strconv.FormatFloat(amount, 'f', -1, 64)
