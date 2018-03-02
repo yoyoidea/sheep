@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type Account struct {
@@ -54,8 +55,14 @@ func (h *Huobi) GetAccountBalance(strAccountID string) (*Balance, error) {
 // 下单
 // placeRequestParams: 下单信息
 // return: PlaceReturn对象
-func (h *Huobi) Place(placeRequestParams PlaceRequestParams) (string, error) {
-	placeReturn := PlaceReturn{}
+func (h *Huobi) Place(amount, price float64, symbol, typ string) (string, error) {
+	var placeRequestParams PlaceRequestParams
+	placeRequestParams.AccountID = strconv.FormatInt(h.tradeAccount.ID, 10)
+	placeRequestParams.Amount = strconv.FormatFloat(amount, 'f', -1, 64)
+	placeRequestParams.Price = strconv.FormatFloat(price, 'f', -1, 64)
+	placeRequestParams.Source = "api"
+	placeRequestParams.Symbol = symbol
+	placeRequestParams.Type = typ
 
 	mapParams := make(map[string]string)
 	mapParams["account-id"] = placeRequestParams.AccountID
