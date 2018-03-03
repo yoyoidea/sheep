@@ -13,6 +13,7 @@ import (
 
 	"github.com/bitly/go-simplejson"
 	"github.com/leizongmin/huobiapi/debug"
+	"sync"
 )
 
 // Endpoint 行情的Websocket入口
@@ -89,6 +90,8 @@ type Market struct {
 	HeartbeatInterval time.Duration
 	// 接收消息超时时间，默认10秒
 	ReceiveTimeout time.Duration
+
+	mutex *sync.RWMutex
 }
 
 // Listener 订阅事件监听器
@@ -105,6 +108,7 @@ func NewMarket() (m *Market, err error) {
 		subscribeResultCb: make(map[string]jsonChan),
 		requestResultCb:   make(map[string]jsonChan),
 		subscribedTopic:   make(map[string]bool),
+		mutex:             &sync.RWMutex{},
 	}
 
 	if err := m.connect(); err != nil {
@@ -193,11 +197,14 @@ func (m *Market) handleMessageLoop() {
 
 		// 处理订阅消息
 		if ch := json.Get("ch").MustString(); ch != "" {
+			m.mutex.RLock()
+			defer m.mutex.RUnlock()
 			listener, ok := m.listeners[ch]
 			if ok {
 				debug.Println("handleSubscribe", json)
 				listener(ch, json)
 			}
+
 			return
 		}
 
@@ -266,6 +273,8 @@ func (m *Market) handlePing(ping pingData) (err error) {
 
 // Subscribe 订阅
 func (m *Market) Subscribe(topic string, listener Listener) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 	debug.Println("subscribe", topic)
 
 	var isNew = false
