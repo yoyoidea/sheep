@@ -43,10 +43,12 @@ type Account struct {
 }
 
 type Huobi struct {
-	accessKey    string
-	secretKey    string
-	tradeAccount Account
-	market       *Market
+	accessKey      string
+	secretKey      string
+	tradeAccount   Account
+	market         *Market
+	depthListener  DepthlListener
+	detailListener DetailListener
 }
 
 func (h *Huobi) GetExchangeName() string {
@@ -170,10 +172,18 @@ func (h *Huobi) GetOrders(params OrdersRequestParams) ([]Order, error) {
 
 }
 
+func (h *Huobi) SetDetailListener(listener DetailListener) {
+	h.detailListener = listener
+}
+
+func (h *Huobi) SetDepthlListener(listener DepthlListener) {
+	h.depthListener = listener
+}
+
 // Listener 订阅事件监听器
 type DetailListener = func(symbol string, detail *MarketTradeDetail)
 
-func (h *Huobi) SubscribeDetail(listener DetailListener, symbols ...string) {
+func (h *Huobi) SubscribeDetail(symbols ...string) {
 	for _, symbol := range symbols {
 		h.market.Subscribe("market."+symbol+".trade.detail", func(topic string, j *huobiapi.JSON) {
 			js, _ := j.MarshalJSON()
@@ -184,7 +194,10 @@ func (h *Huobi) SubscribeDetail(listener DetailListener, symbols ...string) {
 			}
 
 			ts := strings.Split(topic, ".")
-			listener(ts[1], &mtd)
+			if h.detailListener != nil {
+				h.detailListener(ts[1], &mtd)
+			}
+
 		})
 	}
 
@@ -193,7 +206,7 @@ func (h *Huobi) SubscribeDetail(listener DetailListener, symbols ...string) {
 // Listener 订阅事件监听器
 type DepthlListener = func(symbol string, depth *MarketDepth)
 
-func (h *Huobi) SubscribeDepth(listener DepthlListener, symbols ...string) {
+func (h *Huobi) SubscribeDepth(symbols ...string) {
 	for _, symbol := range symbols {
 		h.market.Subscribe("market."+symbol+".depth.step0", func(topic string, j *huobiapi.JSON) {
 			js, _ := j.MarshalJSON()
@@ -204,7 +217,10 @@ func (h *Huobi) SubscribeDepth(listener DepthlListener, symbols ...string) {
 			}
 
 			ts := strings.Split(topic, ".")
-			listener(ts[1], &md)
+			if h.depthListener != nil {
+				h.depthListener(ts[1], &md)
+			}
+
 		})
 	}
 }
