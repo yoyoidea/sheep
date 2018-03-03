@@ -231,22 +231,24 @@ func NewHuobi(accesskey, secretkey string) (*Huobi, error) {
 		secretKey: secretkey,
 	}
 
-	fmt.Println("init huobi.")
-	ret := h.GetAccounts()
-	if ret.Status != "ok" {
-		return nil, errors.New(ret.ErrMsg)
-	}
-
-	for _, account := range ret.Data {
-		if account.Type == "spot" {
-			fmt.Println("account id:", account.ID)
-			h.tradeAccount.ID = account.ID
-			h.tradeAccount.Type = account.Type
-			h.tradeAccount.State = account.State
-			h.tradeAccount.UserID = account.UserID
-			break
+	if accesskey != "" {
+		fmt.Println("init huobi.")
+		ret := h.GetAccounts()
+		if ret.Status != "ok" {
+			return nil, errors.New(ret.ErrMsg)
 		}
 
+		for _, account := range ret.Data {
+			if account.Type == "spot" {
+				fmt.Println("account id:", account.ID)
+				h.tradeAccount.ID = account.ID
+				h.tradeAccount.Type = account.Type
+				h.tradeAccount.State = account.State
+				h.tradeAccount.UserID = account.UserID
+				break
+			}
+
+		}
 	}
 
 	var err error
