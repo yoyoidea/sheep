@@ -3,7 +3,7 @@
 
 ## example
 
-```
+``` go
 import (
 	"log"
 
