@@ -1,6 +1,6 @@
 # sheep
 
-Huobi API Toolkit
+Huobi API Toolkit 火币API工具集
 
 ## example
 
